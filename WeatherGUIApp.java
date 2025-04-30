@@ -1,11 +1,10 @@
+// (imports remain unchanged)
 import javax.swing.*;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
-import java.util.*;
-import java.util.List;
 
 public class WeatherGUIApp extends JFrame {
     private JTextField cityInput;
@@ -39,14 +38,15 @@ public class WeatherGUIApp extends JFrame {
         resultArea = new JTextArea();
         resultArea.setEditable(false);
         resultArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        resultArea.setBackground(new Color(240, 248, 255));
-        resultArea.setForeground(Color.DARK_GRAY);
-        JScrollPane scrollPane = new JScrollPane(resultArea);
+        resultArea.setBackground(new Color(30, 30, 60));
+        resultArea.setForeground(Color.WHITE); // Default foreground color
 
+        JScrollPane scrollPane = new JScrollPane(resultArea);
         iconLabel = new JLabel("", SwingConstants.CENTER);
         iconLabel.setFont(new Font("SansSerif", Font.PLAIN, 64));
 
         centerPanel = new JPanel(new BorderLayout());
+        centerPanel.setBackground(new Color(240, 248, 255)); // Default background
         centerPanel.add(iconLabel, BorderLayout.NORTH);
         centerPanel.add(scrollPane, BorderLayout.CENTER);
 
@@ -72,7 +72,7 @@ public class WeatherGUIApp extends JFrame {
         });
 
         // Footer
-        JLabel footer = new JLabel("Made with love by Durga Divija Sri Sai Pagadala ", SwingConstants.CENTER);
+        JLabel footer = new JLabel("Powered by OpenWeatherMap", SwingConstants.CENTER);
         footer.setFont(new Font("SansSerif", Font.ITALIC, 12));
         footer.setForeground(Color.GRAY);
 
@@ -185,7 +185,12 @@ public class WeatherGUIApp extends JFrame {
                 SwingUtilities.invokeLater(() -> centerPanel.setBackground(step));
                 try { Thread.sleep(30); } catch (InterruptedException ignored) {}
             }
-            SwingUtilities.invokeLater(() -> resultArea.setForeground(hour >= 6 && hour < 18 ? Color.DARK_GRAY : Color.WHITE));
+
+            // Update text color for visibility after background change
+            SwingUtilities.invokeLater(() -> {
+                resultArea.setForeground(hour >= 6 && hour < 18 ? Color.DARK_GRAY : Color.WHITE);
+            });
+
         }).start();
     }
 
@@ -218,7 +223,7 @@ public class WeatherGUIApp extends JFrame {
             try (BufferedReader reader = new BufferedReader(new FileReader(historyFile))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if (!line.isBlank() && !historyModel.contains(line)) {
+                    if (!line.isBlank() && !historyModel.contains(line.trim())) {
                         historyModel.addElement(line.trim());
                     }
                 }
