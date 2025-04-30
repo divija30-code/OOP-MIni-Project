@@ -1,11 +1,9 @@
-// (imports remain unchanged)
 import javax.swing.*;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
-
 public class WeatherGUIApp extends JFrame {
     private JTextField cityInput;
     private JTextArea resultArea;
@@ -14,19 +12,9 @@ public class WeatherGUIApp extends JFrame {
     private DefaultListModel<String> historyModel;
     private final String apikey = "2a789ea35a48e047c50152a3af21d4d9";
     private final File historyFile = new File("weather_history.txt");
-    private final File themeFile = new File("theme_preference.txt");
-    private boolean isDarkMode = false;
-    
-    // Theme colors
-    private final Color LIGHT_BG = new Color(240, 248, 255);
-    private final Color DARK_BG = new Color(30, 30, 60);
-    private final Color LIGHT_HEADER = new Color(210, 230, 255);
-    private final Color DARK_HEADER = new Color(40, 40, 80);
-    private final Color LIGHT_TEXT = Color.DARK_GRAY;
-    private final Color DARK_TEXT = Color.WHITE;
+    private boolean isDarkMode = false; // Dark mode flag (starts in light mode)
 
     public WeatherGUIApp() {
-        loadThemePreference();
         setTitle("🌦 Real Weather App - Now with Memory!");
         setSize(460, 480);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -37,35 +25,31 @@ public class WeatherGUIApp extends JFrame {
         JLabel label = new JLabel("Enter City:");
         cityInput = new JTextField(18);
         JButton getWeatherButton = new JButton("🔍 Get Weather");
-        JToggleButton darkModeToggle = new JToggleButton(isDarkMode ? "☀️" : "🌙");
-        darkModeToggle.setToolTipText(isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode");
-        darkModeToggle.setSelected(isDarkMode);
-        darkModeToggle.setFocusPainted(false);
+        JButton refreshButton = new JButton("🔄 Refresh");
+        JCheckBox darkModeCheckBox = new JCheckBox("Dark Mode", false); // Default to Light Mode
 
         JPanel inputPanel = new JPanel();
-        inputPanel.setBackground(isDarkMode ? DARK_HEADER : LIGHT_HEADER);
+        inputPanel.setBackground(new Color(210, 230, 255));
         inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         inputPanel.add(label);
         inputPanel.add(cityInput);
         inputPanel.add(getWeatherButton);
-        inputPanel.add(darkModeToggle);
-        
-        // Set initial colors based on theme
-        label.setForeground(isDarkMode ? DARK_TEXT : LIGHT_TEXT);
+        inputPanel.add(refreshButton);
+        inputPanel.add(darkModeCheckBox);
 
         // Center Panel
         resultArea = new JTextArea();
         resultArea.setEditable(false);
         resultArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        resultArea.setBackground(isDarkMode ? DARK_BG : new Color(245, 245, 245));
-        resultArea.setForeground(isDarkMode ? DARK_TEXT : LIGHT_TEXT); // Set based on theme
+        resultArea.setBackground(new Color(240, 248, 255)); // Light mode default
+        resultArea.setForeground(Color.BLACK); // Default text color (black for light mode)
 
         JScrollPane scrollPane = new JScrollPane(resultArea);
         iconLabel = new JLabel("", SwingConstants.CENTER);
         iconLabel.setFont(new Font("SansSerif", Font.PLAIN, 64));
 
         centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setBackground(isDarkMode ? DARK_BG : LIGHT_BG); // Set based on theme
+        centerPanel.setBackground(new Color(240, 248, 255)); // Light mode default
         centerPanel.add(iconLabel, BorderLayout.NORTH);
         centerPanel.add(scrollPane, BorderLayout.CENTER);
 
@@ -93,13 +77,14 @@ public class WeatherGUIApp extends JFrame {
         // Footer
         JLabel footer = new JLabel("Powered by OpenWeatherMap", SwingConstants.CENTER);
         footer.setFont(new Font("SansSerif", Font.ITALIC, 12));
-        footer.setForeground(isDarkMode ? new Color(180, 180, 180) : Color.GRAY);
+        footer.setForeground(Color.GRAY);
 
         add(inputPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
         add(historyScroll, BorderLayout.EAST);
         add(footer, BorderLayout.SOUTH);
 
+        // Fetch weather when "Get Weather" button is clicked
         getWeatherButton.addActionListener(e -> {
             String city = cityInput.getText().trim();
             if (!city.isEmpty()) {
@@ -114,16 +99,48 @@ public class WeatherGUIApp extends JFrame {
                 iconLabel.setText("❗");
             }
         });
+
+        // Refresh weather when "Refresh" button is clicked
+        refreshButton.addActionListener(e -> {
+            String city = cityInput.getText().trim();
+            if (!city.isEmpty()) {
+                fetchWeather(city);
+            }
+            // Clear the search history
+            historyModel.clear();
+            // Optionally, delete the file to reset saved history
+            if (historyFile.exists()) {
+                historyFile.delete();
+            }
+        });
         
-        darkModeToggle.addActionListener(e -> {
-            isDarkMode = darkModeToggle.isSelected();
-            darkModeToggle.setText(isDarkMode ? "☀️" : "🌙");
-            darkModeToggle.setToolTipText(isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode");
-            applyTheme();
-            saveThemePreference();
+
+        // Toggle dark mode when checkbox is checked/unchecked
+        darkModeCheckBox.addActionListener(e -> {
+            isDarkMode = darkModeCheckBox.isSelected();
+            applyMode();
         });
 
         setVisible(true);
+    }
+
+    private void applyMode() {
+        // Light Mode
+        if (!isDarkMode) {
+            resultArea.setBackground(new Color(240, 248, 255)); // Light mode background
+            resultArea.setForeground(Color.BLACK); // Black text in light mode
+            centerPanel.setBackground(new Color(240, 248, 255)); // Light mode background
+            cityInput.setBackground(Color.WHITE); // Light background for input
+            cityInput.setForeground(Color.BLACK); // Black text in input field
+        }
+        // Dark Mode
+        else {
+            resultArea.setBackground(new Color(30, 30, 60)); // Dark mode background
+            resultArea.setForeground(Color.WHITE); // White text in dark mode
+            centerPanel.setBackground(new Color(30, 30, 60)); // Dark mode background
+            cityInput.setBackground(new Color(50, 50, 70)); // Dark background for input
+            cityInput.setForeground(Color.WHITE); // White text in input field
+        }
     }
 
     private void fetchWeather(String city) {
@@ -199,15 +216,7 @@ public class WeatherGUIApp extends JFrame {
     }
 
     private void animateBackground(int hour) {
-        // If in dark mode, use dark colors regardless of time
-        // If in light mode, use time-based colors
-        Color target;
-        if (isDarkMode) {
-            target = DARK_BG;
-        } else {
-            target = (hour >= 6 && hour < 18) ? new Color(225, 245, 254) : new Color(30, 30, 60);
-        }
-        
+        Color target = (hour >= 6 && hour < 18) ? new Color(225, 245, 254) : new Color(30, 30, 60);
         Color start = centerPanel.getBackground();
 
         new Thread(() -> {
@@ -223,11 +232,7 @@ public class WeatherGUIApp extends JFrame {
 
             // Update text color for visibility after background change
             SwingUtilities.invokeLater(() -> {
-                if (isDarkMode) {
-                    resultArea.setForeground(DARK_TEXT);
-                } else {
-                    resultArea.setForeground(hour >= 6 && hour < 18 ? LIGHT_TEXT : DARK_TEXT);
-                }
+                resultArea.setForeground(hour >= 6 && hour < 18 ? Color.DARK_GRAY : Color.WHITE);
             });
 
         }).start();
@@ -286,60 +291,6 @@ public class WeatherGUIApp extends JFrame {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
-    private void applyTheme() {
-        // Apply theme to all components
-        SwingUtilities.invokeLater(() -> {
-            // Update panel backgrounds
-            centerPanel.setBackground(isDarkMode ? DARK_BG : LIGHT_BG);
-            Component[] components = getContentPane().getComponents();
-            for (Component c : components) {
-                if (c instanceof JPanel) {
-                    if (c == centerPanel) continue; // Skip center panel as it's handled separately
-                    
-                    if (((JPanel) c).getComponentCount() > 0 && ((JPanel) c).getComponent(0) instanceof JLabel 
-                            && "Enter City:".equals(((JLabel)((JPanel) c).getComponent(0)).getText())) {
-                        // This is the input panel
-                        c.setBackground(isDarkMode ? DARK_HEADER : LIGHT_HEADER);
-                        // Update label color
-                        ((JLabel)((JPanel) c).getComponent(0)).setForeground(isDarkMode ? DARK_TEXT : LIGHT_TEXT);
-                    }
-                }
-            }
-            
-            // Update result area
-            resultArea.setBackground(isDarkMode ? DARK_BG : new Color(245, 245, 245));
-            resultArea.setForeground(isDarkMode ? DARK_TEXT : LIGHT_TEXT);
-            
-            // Update footer
-            for (Component c : components) {
-                if (c instanceof JLabel && ((JLabel) c).getText().contains("OpenWeatherMap")) {
-                    ((JLabel) c).setForeground(isDarkMode ? new Color(180, 180, 180) : Color.GRAY);
-                }
-            }
-        });
-    }
-    
-    private void saveThemePreference() {
-        try (PrintWriter out = new PrintWriter(new FileWriter(themeFile))) {
-            out.println(isDarkMode ? "dark" : "light");
-        } catch (IOException e) {
-            System.out.println("Could not save theme preference: " + e.getMessage());
-        }
-    }
-    
-    private void loadThemePreference() {
-        if (themeFile.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(themeFile))) {
-                String theme = reader.readLine();
-                if (theme != null) {
-                    isDarkMode = "dark".equalsIgnoreCase(theme.trim());
-                }
-            } catch (IOException e) {
-                System.out.println("Could not load theme preference.");
-            }
-        }
-    }
-    
     public static void main(String[] args) {
         try {
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
