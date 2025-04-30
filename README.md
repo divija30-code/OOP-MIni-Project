@@ -1,4 +1,4 @@
-# 🌦 Real Weather App - Now with Memory!
+# 🌦 Real Weather App
 
 Hey there! 👋  
 Welcome to my Weather App — a fun little Java Swing project that fetches real-time weather data and remembers where you've been searching! ☁️🌡️
